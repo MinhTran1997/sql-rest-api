@@ -1,6 +1,6 @@
 import {Pool} from 'pg';
 import {User} from '../../models/User';
-import {exec, query, queryOne, StringMap} from './postgresql';
+import {exec, execBatch, query, queryOne, StringMap} from './postgresql';
 
 export const dateMap: StringMap = {
   date_of_birth: 'dateOfBirth',
@@ -24,5 +24,11 @@ export class SqlUserService {
   }
   delete(id: string): Promise<number> {
     return exec(this.pool, `delete from users where id = $1`, [id]);
+  }
+  transaction(users: User[]): Promise<number> {
+    const statements = users.map((item) => {
+      return { query: `insert into users (id, username, email) values ($1, $2, $3)`, params: [item.id, item.username, item.email] };
+    });
+    return execBatch(this.pool, statements, true );
   }
 }

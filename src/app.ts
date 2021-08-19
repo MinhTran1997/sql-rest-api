@@ -17,13 +17,20 @@ app.use(json());
 export const pool = new Pool ({
   user: 'postgres',
   host: 'localhost',
-  password: 'abcd1234',
+  password: '123',
   database: 'masterdata',
   port: 5432
 });
 
-const ctx = createContext(pool);
-route(app, ctx);
-http.createServer(app).listen(port, () => {
-  console.log('Start server at port ' + port);
+pool.connect().then( () => {
+  const ctx = createContext(pool);
+  route(app, ctx);
+  http.createServer(app).listen(port, () => {
+    console.log('Start server at port ' + port);
+  });
+  console.log('Connected successfully to PostgreSQL.');
+})
+.catch(e => {
+  console.error('Failed to connect to PostgreSQL.', e.message, e.stack);
 });
+

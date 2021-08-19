@@ -8,4 +8,5 @@ export function route(app: Application, ctx: ApplicationContext): void {
   app.post('/users', user.insert);
   app.put('/users/:id', user.update);
   app.delete('/users/:id', user.delete);
+  app.post('/transactions', user.insertMany);
 }

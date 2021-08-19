@@ -1,4 +1,5 @@
 import {Request, Response} from 'express';
+import { User } from '../models/User';
 import {UserService} from '../services/UserService';
 
 export class UserController {
@@ -8,6 +9,7 @@ export class UserController {
     this.insert = this.insert.bind(this);
     this.update = this.update.bind(this);
     this.delete = this.delete.bind(this);
+    this.insertMany = this.insertMany.bind(this);
   }
 
   all(req: Request, res: Response) {
@@ -57,6 +59,31 @@ export class UserController {
       return res.status(400).send('id cannot be empty');
     }
     this.userService.delete(id)
+      .then(result => res.status(200).json(result))
+      .catch(err => res.status(500).send(err));
+  }
+  insertMany(req: Request, res: Response) {
+    const users: User[] = [{
+      id: '1',
+      username: 'tony.stark',
+      email: 'tony.stark@gmail.com',
+    },
+    {
+      id: '2',
+      username: 'peter.parker',
+      email: 'peter.parker@gmail.com',
+    },
+    {
+      id: '2',
+      username: 'james.howlett',
+      email: 'james.howlett@gmail.com',
+    },
+    {
+      id: '4',
+      username: 'james.howlett',
+      email: 'james.howlett@gmail.com',
+    }];
+    this.userService.transaction(users)
       .then(result => res.status(200).json(result))
       .catch(err => res.status(500).send(err));
   }
