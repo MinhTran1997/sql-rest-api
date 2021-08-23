@@ -45,21 +45,20 @@ export async function execBatch(pool: Pool, statements: Statement[], firstSucces
     try {
       await client.query('begin');
       const result0  = await client.query(statements[0].query, statements[0].params)
-      if(result0.rowCount === 0){
-        return 0;
+      if(result0 && result0.rowCount !== 0){
+        let listStatements = statements.slice(1);
+        const arrPromise = listStatements.map((item) => {
+          return client.query(item.query, item.params ? item.params : []);
+        });
+        await Promise.all(arrPromise).then(results => {
+          for (const obj of results) {
+            c += obj.rowCount;
+          }
+        });
+        c += result0.rowCount;
+        await client.query('commit');
+        return c;;
       }
-      let listStatements = statements.slice(1);
-      const arrPromise = listStatements.map((item) => {
-        return client.query(item.query, item.params ? item.params : []);
-      });
-      await Promise.all(arrPromise).then(results => {
-        for (const obj of results) {
-          c += obj.rowCount;
-        }
-      });
-      c += result0.rowCount;
-      await client.query('commit');
-      return c;
     } catch (e) {
       await client.query('rollback');
       throw e;
@@ -78,7 +77,6 @@ export async function execBatch(pool: Pool, statements: Statement[], firstSucces
           c += obj.rowCount;
         }
       });
-      console.log('commit');
       await client.query('commit');
       return c;
     } catch (e) {
