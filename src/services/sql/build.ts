@@ -1,7 +1,7 @@
 import {Attribute, Attributes, Statement, StringMap} from './metadata';
 
 export function param(i: number): string {
-  return '?';
+  return '$' + i;
 }
 export function params(length: number, from?: number): string[] {
   if (from === undefined || from == null) {
@@ -93,10 +93,16 @@ export function buildToSave<T>(obj: T, table: string, attrs: Attributes, ver?: s
           values.push(`''`);
         } else if (typeof v === 'number') {
           values.push(toString(v));
-        } else {
-          const p = buildParam(i++);
-          values.push(p);
-          if (typeof v === 'boolean') {
+        } else if (typeof v === 'boolean') {
+          if (attr.true === undefined) {
+            if (v === true) {
+              values.push(`true`);
+            } else {
+              values.push(`false`);
+            }
+          } else {
+            const p = buildParam(i++);
+            values.push(p);
             if (v === true) {
               const v2 = (attr.true ? attr.true : '1');
               args.push(v2);
@@ -104,9 +110,11 @@ export function buildToSave<T>(obj: T, table: string, attrs: Attributes, ver?: s
               const v2 = (attr.false ? attr.false : '0');
               args.push(v2);
             }
-          } else {
-            args.push(v);
           }
+        } else {
+          const p = buildParam(i++);
+          values.push(p);
+          args.push(v);
         }
       }
     }
@@ -139,29 +147,41 @@ export function buildToSave<T>(obj: T, table: string, attrs: Attributes, ver?: s
             x = `''`;
           } else if (typeof v === 'number') {
             x = toString(v);
-          } else {
-            x = buildParam(i++);
-            if (typeof v === 'boolean') {
+          } else if (typeof v === 'boolean') {
+            if (attr.true === undefined) {
               if (v === true) {
-                const v2 = (attr.true ? '' + attr.true : '1');
-                args.push(v2);
+                x = `true`;
               } else {
-                const v2 = (attr.false ? '' + attr.false : '0');
-                args.push(v2);
+                x = `false`;
               }
             } else {
-              args.push(v);
+              x = buildParam(i++);
+              if (v === true) {
+                const v2 = (attr.true ? attr.true : '1');
+                args.push(v2);
+              } else {
+                const v2 = (attr.false ? attr.false : '0');
+                args.push(v2);
+              }
             }
+          } else {
+            x = buildParam(i++);
+            args.push(v);
           }
           colSet.push(`${field}=${x}`);
         }
       }
     }
+    const fks: string[] = [];
+    for (const pk of pks) {
+      const field = (pk.field ? pk.field : pk.name);
+      fks.push(field);
+    }
     if (colSet.length === 0) {
-      const q = `insert ignore into ${table}(${cols.join(',')})values(${values.join(',')})`;
+      const q = `insert into ${table}(${cols.join(',')})values(${values.join(',')}) on conflict(${fks.join(',')}) do nothing`;
       return { query: q, params: args };
     } else {
-      const q = `insert into ${table}(${cols.join(',')})values(${values.join(',')}) on duplicate key update ${colSet.join(',')}`;
+      const q = `insert into ${table}(${cols.join(',')})values(${values.join(',')}) on conflict(${fks.join(',')}) do update set ${colSet.join(',')}`;
       return { query: q, params: args };
     }
   }
@@ -172,6 +192,10 @@ export function buildToSaveBatch<T>(objs: T[], table: string, attrs: Attributes,
   }
   const sts: Statement[] = [];
   const meta = metadata(attrs);
+  const pks = meta.keys;
+  if (!pks || pks.length === 0) {
+    return null;
+  }
   const ks = Object.keys(attrs);
   for (const obj of objs) {
     let i = 1;
@@ -196,10 +220,16 @@ export function buildToSaveBatch<T>(objs: T[], table: string, attrs: Attributes,
             values.push(`''`);
           } else if (typeof v === 'number') {
             values.push(toString(v));
-          } else {
-            const p = buildParam(i++);
-            values.push(p);
-            if (typeof v === 'boolean') {
+          } else if (typeof v === 'boolean') {
+            if (attr.true === undefined) {
+              if (v === true) {
+                values.push(`true`);
+              } else {
+                values.push(`false`);
+              }
+            } else {
+              const p = buildParam(i++);
+              values.push(p);
               if (v === true) {
                 const v2 = (attr.true ? attr.true : '1');
                 args.push(v2);
@@ -207,9 +237,11 @@ export function buildToSaveBatch<T>(objs: T[], table: string, attrs: Attributes,
                 const v2 = (attr.false ? attr.false : '0');
                 args.push(v2);
               }
-            } else {
-              args.push(v);
             }
+          } else {
+            const p = buildParam(i++);
+            values.push(p);
+            args.push(v);
           }
         }
       }
@@ -234,31 +266,43 @@ export function buildToSaveBatch<T>(objs: T[], table: string, attrs: Attributes,
             x = `''`;
           } else if (typeof v === 'number') {
             x = toString(v);
-          } else {
-            x = buildParam(i++);
-            if (typeof v === 'boolean') {
+          } else if (typeof v === 'boolean') {
+            if (attr.true === undefined) {
               if (v === true) {
-                const v2 = (attr.true ? '' + attr.true : '1');
-                args.push(v2);
+                x = `true`;
               } else {
-                const v2 = (attr.false ? '' + attr.false : '0');
-                args.push(v2);
+                x = `false`;
               }
             } else {
-              args.push(v);
+              x = buildParam(i++);
+              if (v === true) {
+                const v2 = (attr.true ? attr.true : '1');
+                args.push(v2);
+              } else {
+                const v2 = (attr.false ? attr.false : '0');
+                args.push(v2);
+              }
             }
+          } else {
+            x = buildParam(i++);
+            args.push(v);
           }
           colSet.push(`${field}=${x}`);
         }
       }
     }
+    const fks: string[] = [];
+    for (const pk of pks) {
+      const field = (pk.field ? pk.field : pk.name);
+      fks.push(field);
+    }
     if (colSet.length === 0) {
-      const q = `insert ignore into ${table}(${cols.join(',')})values(${values.join(',')});`;
-      const smt = { query: q, args };
+      const q = `insert into ${table}(${cols.join(',')})values(${values.join(',')}) on conflict(${fks.join(',')}) do nothing`;
+      const smt: Statement = { query: q, params: args };
       sts.push(smt);
     } else {
-      const q = `insert into ${table}(${cols.join(',')})values(${values.join(',')}) on duplicate key update ${colSet.join(',')};`;
-      const smt = { query: q, args };
+      const q = `insert into ${table}(${cols.join(',')})values(${values.join(',')}) on conflict(${fks.join(',')}) do update set ${colSet.join(',')}`;
+      const smt: Statement = { query: q, params: args };
       sts.push(smt);
     }
   }
