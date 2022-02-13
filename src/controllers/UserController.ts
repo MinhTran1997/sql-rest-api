@@ -1,15 +1,26 @@
 import {Request, Response} from 'express';
 import { User } from '../models/User';
 import {UserService} from '../services/UserService';
+import { StorageService } from 'google-storage';
 
 export class UserController {
-  constructor(private userService: UserService) {
+  constructor(private userService: UserService, private storageService: StorageService) {
+    this.healthcheck = this.healthcheck.bind(this)
     this.all = this.all.bind(this);
     this.load = this.load.bind(this);
     this.insert = this.insert.bind(this);
     this.update = this.update.bind(this);
     this.delete = this.delete.bind(this);
     this.insertMany = this.insertMany.bind(this);
+    
+    this.uploadFile = this.uploadFile.bind(this);
+    this.deleteFile = this.deleteFile.bind(this);
+  }
+
+  healthcheck(req: Request, res: Response) {
+    this.userService.healthcheck()
+      .then(result => res.status(200).json(result))
+      .catch(err => res.status(500).send(err));
   }
 
   all(req: Request, res: Response) {
@@ -86,5 +97,27 @@ export class UserController {
     this.userService.transaction(users)
       .then(result => res.status(200).json(result))
       .catch(err => res.status(500).send(err));
+  }
+
+  uploadFile(req: Request, res: Response) {
+    const fileName = req.file.originalname;
+    const fileBuffer = req.file.buffer;
+
+    this.storageService.upload("root", fileName, fileBuffer)
+      .then(result =>  res.status(200).json(result))
+      .catch((err) => {
+          console.log(err);
+          return res.status(400).send('Upload failed');
+      });
+  }
+
+  deleteFile(req: Request, res: Response) {
+    const fileName = req.params['name'];
+    this.storageService.delete("root", fileName)
+      .then((result) => res.status(200).json(result))
+      .catch((err) => {
+        console.log(err);
+        return res.status(400).send('Delete failed');
+      });
   }
 }

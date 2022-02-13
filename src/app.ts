@@ -12,18 +12,20 @@ const app = express();
 
 const port = process.env.PORT;
 
+const provider = process.env.PROVIDER;
+
 app.use(json());
 
 export const pool = new Pool ({
   user: 'postgres',
   host: 'localhost',
-  password: '123',
-  database: 'masterdata',
+  password: 'bbc148562',
+  database: 'public',
   port: 5432
 });
 
-pool.connect().then( () => {
-  const ctx = createContext(pool);
+pool.connect().then(() => {
+  const ctx = createContext(pool, provider);
   route(app, ctx);
   http.createServer(app).listen(port, () => {
     console.log('Start server at port ' + port);

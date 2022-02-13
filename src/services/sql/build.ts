@@ -3,6 +3,7 @@ import {Attribute, Attributes, Statement, StringMap} from './metadata';
 export function param(i: number): string {
   return '$' + i;
 }
+
 export function params(length: number, from?: number): string[] {
   if (from === undefined || from == null) {
     from = 0;
@@ -13,6 +14,7 @@ export function params(length: number, from?: number): string[] {
   }
   return ps;
 }
+
 export interface Metadata {
   keys: Attribute[];
   bools?: Attribute[];
@@ -20,6 +22,7 @@ export interface Metadata {
   version?: string;
   fields?: string[];
 }
+
 export function metadata(attrs: Attributes): Metadata {
   const mp: StringMap = {};
   const ks = Object.keys(attrs);
@@ -59,6 +62,7 @@ export function metadata(attrs: Attributes): Metadata {
   }
   return m;
 }
+
 export function buildToSave<T>(obj: T, table: string, attrs: Attributes, ver?: string, buildParam?: (i: number) => string, i?: number): Statement {
   if (!i) {
     i = 1;
@@ -186,6 +190,7 @@ export function buildToSave<T>(obj: T, table: string, attrs: Attributes, ver?: s
     }
   }
 }
+
 export function buildToSaveBatch<T>(objs: T[], table: string, attrs: Attributes, ver?: string, buildParam?: (i: number) => string): Statement[] {
   if (!buildParam) {
     buildParam = param;

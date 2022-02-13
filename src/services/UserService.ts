@@ -1,6 +1,7 @@
 import {User} from '../models/User';
 
 export interface UserService {
+  healthcheck(): Promise<string>;
   all(): Promise<User[]>;
   load(id: string): Promise<User>;
   insert(user: User): Promise<number>;

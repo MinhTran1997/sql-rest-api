@@ -37,6 +37,7 @@ export class PoolManager implements Manager {
     return count(this.pool, sql, args);
   }
 }
+
 // tslint:disable-next-line:max-classes-per-file
 export class PoolClientManager implements Manager {
   constructor(public client: PoolClient) {
@@ -66,15 +67,18 @@ export class PoolClientManager implements Manager {
     return count(this.client, sql, args);
   }
 }
+
 function buildError(err: any): any {
   if (err.code === '23505') {
     err.error = 'duplicate';
   }
   return err;
 }
+
 export interface Query {
   query<R extends QueryResultRow = any, I extends any[] = any[]>(queryText: string, values: I, callback: (err: Error, result: QueryResult<R>) => void): void;
 }
+
 export function exec(client: Query, sql: string, args?: any[]): Promise<number> {
   const p = toArray(args);
   return new Promise<number>((resolve, reject) => {
@@ -88,6 +92,7 @@ export function exec(client: Query, sql: string, args?: any[]): Promise<number> 
     });
   });
 }
+
 export function query<T>(client: Query, sql: string, args?: any[], m?: StringMap, bools?: Attribute[]): Promise<T[]> {
   const p = toArray(args);
   return new Promise<T[]>((resolve, reject) => {
@@ -100,11 +105,13 @@ export function query<T>(client: Query, sql: string, args?: any[], m?: StringMap
     });
   });
 }
+
 export function queryOne<T>(client: Query, sql: string, args?: any[], m?: StringMap, bools?: Attribute[]): Promise<T> {
   return query<T>(client, sql, args, m, bools).then(r => {
     return (r && r.length > 0 ? r[0] : null);
   });
 }
+
 export function execScalar<T>(client: Query, sql: string, args?: any[]): Promise<T> {
   return queryOne<T>(client, sql, args).then(r => {
     if (!r) {
@@ -115,6 +122,7 @@ export function execScalar<T>(client: Query, sql: string, args?: any[]): Promise
     }
   });
 }
+
 export function count(client: Query, sql: string, args?: any[]): Promise<number> {
   return execScalar<number>(client, sql, args);
 }
@@ -173,6 +181,7 @@ export async function execBatch(pool: Pool, statements: Statement[], firstSucces
     }
   }
 }
+
 export async function execBatchWithClient(client: PoolClient, statements: Statement[], firstSuccess?: boolean): Promise<number> {
   if (!statements || statements.length === 0) {
     return Promise.resolve(0);
@@ -234,10 +243,12 @@ export function save<T>(client: Query|((sql: string, args?: any[]) => Promise<nu
     return exec(client, s.query, s.params);
   }
 }
+
 export function saveBatch<T>(pool: Pool, objs: T[], table: string, attrs: Attributes, ver?: string, buildParam?: (i: number) => string): Promise<number> {
   const s = buildToSaveBatch(objs, table, attrs, ver, buildParam);
   return execBatch(pool, s);
 }
+
 export function saveBatchWithClient<T>(client: PoolClient, objs: T[], table: string, attrs: Attributes, ver?: string, buildParam?: (i: number) => string): Promise<number> {
   const s = buildToSaveBatch(objs, table, attrs, ver, buildParam);
   return execBatchWithClient(client, s);
@@ -271,6 +282,7 @@ export function toArray(arr: any[]): any[] {
   }
   return p;
 }
+
 export function handleResults<T>(r: T[], m?: StringMap, bools?: Attribute[]): T[] {
   if (m) {
     const res = mapArray(r, m);
@@ -287,6 +299,7 @@ export function handleResults<T>(r: T[], m?: StringMap, bools?: Attribute[]): T[
     }
   }
 }
+
 export function handleBool<T>(objs: T[], bools: Attribute[]): T[] {
   if (!bools || bools.length === 0 || !objs) {
     return objs;
@@ -308,6 +321,7 @@ export function handleBool<T>(objs: T[], bools: Attribute[]): T[] {
   }
   return objs;
 }
+
 export function map<T>(obj: T, m?: StringMap): any {
   if (!m) {
     return obj;
@@ -327,6 +341,7 @@ export function map<T>(obj: T, m?: StringMap): any {
   }
   return obj2;
 }
+
 export function mapArray<T>(results: T[], m?: StringMap): T[] {
   if (!m) {
     return results;
@@ -352,6 +367,7 @@ export function mapArray<T>(results: T[], m?: StringMap): T[] {
   }
   return objs;
 }
+
 export function getFields(fields: string[], all?: string[]): string[] {
   if (!fields || fields.length === 0) {
     return undefined;
@@ -372,6 +388,7 @@ export function getFields(fields: string[], all?: string[]): string[] {
     return fields;
   }
 }
+
 export function buildFields(fields: string[], all?: string[]): string {
   const s = getFields(fields, all);
   if (!s || s.length === 0) {
@@ -396,6 +413,7 @@ export function getMapField(name: string, mp?: StringMap): string {
 export function isEmpty(s: string): boolean {
   return !(s && s.length > 0);
 }
+
 // tslint:disable-next-line:max-classes-per-file
 export class StringService {
   constructor(protected pool: Pool, public table: string, public column: string) {
